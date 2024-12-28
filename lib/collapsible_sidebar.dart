@@ -62,7 +62,11 @@ class CollapsibleSidebar extends StatefulWidget {
         offset: Offset(3, 3),
       ),
     ],
+    this.customTitleWidget,
+    this.customBottomWidget,
   }) : super(key: key);
+  final Widget? customTitleWidget;
+  final Widget? customBottomWidget;
 
   final avatarImg;
   final String title, toggleTitle;
@@ -271,21 +275,26 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar>
               SizedBox(
                 height: widget.bottomPadding,
               ),
-              widget.showToggleButton
-                  ? Divider(
-                      color: widget.unselectedIconColor,
-                      indent: 5,
-                      endIndent: 5,
-                      thickness: 1,
-                    )
-                  : SizedBox(
-                      height: 5,
-                    ),
-              widget.showToggleButton
-                  ? _toggleButton
-                  : SizedBox(
-                      height: widget.iconSize,
-                    ),
+              widget.customBottomWidget ??
+                  Column(
+                    children: [
+                      widget.showToggleButton
+                          ? Divider(
+                              color: widget.unselectedIconColor,
+                              indent: 5,
+                              endIndent: 5,
+                              thickness: 1,
+                            )
+                          : SizedBox(
+                              height: 5,
+                            ),
+                      widget.showToggleButton
+                          ? _toggleButton
+                          : SizedBox(
+                              height: widget.iconSize,
+                            ),
+                    ],
+                  ),
             ],
           ),
         ),
@@ -353,6 +362,9 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar>
   }
 
   Widget get _avatar {
+    if (widget.customTitleWidget != null) {
+      return widget.customTitleWidget!;
+    }
     return CollapsibleItemWidget(
       onHoverPointer: widget.onHoverPointer,
       padding: widget.itemPadding,

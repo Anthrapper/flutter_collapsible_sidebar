@@ -216,7 +216,16 @@ class _SidebarPageState extends State<SidebarPage> {
         items: _items,
         collapseOnBodyTap: false,
         avatarImg: _avatarImg,
-        title: 'John Smith',
+        customTitleWidget: Container(
+          height: 100,
+          color: Colors.green,
+          child: Center(child: Text('Custom Title')),
+        ),
+        customBottomWidget: Container(
+          height: 50,
+          color: Colors.red,
+          child: Center(child: Text('Custom Bottom')),
+        ),
         onTitleTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Yay! Flutter Collapsible Sidebar!')));
