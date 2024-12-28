@@ -13,7 +13,7 @@ export 'package:collapsible_sidebar/collapsible_sidebar/collapsible_item.dart';
 
 class CollapsibleSidebar extends StatefulWidget {
   const CollapsibleSidebar({
-    Key? key,
+    super.key,
     required this.items,
     required this.body,
     this.title = 'Lorem Ipsum',
@@ -64,9 +64,11 @@ class CollapsibleSidebar extends StatefulWidget {
     ],
     this.customTitleWidget,
     this.customBottomWidget,
-  }) : super(key: key);
+    this.onCollapseChanged,
+  });
   final Widget? customTitleWidget;
   final Widget? customBottomWidget;
+  final ValueChanged<bool>? onCollapseChanged;
 
   final avatarImg;
   final String title, toggleTitle;
@@ -109,17 +111,17 @@ class CollapsibleSidebar extends StatefulWidget {
   final List<BoxShadow> sidebarBoxShadow;
 
   @override
-  _CollapsibleSidebarState createState() => _CollapsibleSidebarState();
+  CollapsibleSidebarState createState() => CollapsibleSidebarState();
 }
 
-class _CollapsibleSidebarState extends State<CollapsibleSidebar>
+class CollapsibleSidebarState extends State<CollapsibleSidebar>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _widthAnimation;
   late CurvedAnimation _curvedAnimation;
   late double tempWidth;
 
-  var _isCollapsed;
+  late bool _isCollapsed;
   late double _currWidth,
       _delta,
       _delta1By4,
@@ -208,27 +210,62 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar>
       } else {
         _currWidth -= details.primaryDelta!;
       }
+
       if (_currWidth > tempWidth)
         _currWidth = tempWidth;
-      else if (_currWidth < widget.minWidth)
-        _currWidth = widget.minWidth;
-      else
-        setState(() {});
+      else if (_currWidth < widget.minWidth) _currWidth = widget.minWidth;
+
+      // Update isCollapsed based on the drag distance
+      bool newCollapsedState = _currWidth <= widget.minWidth;
+      if (_isCollapsed != newCollapsedState) {
+        _isCollapsed = newCollapsedState;
+        if (widget.onCollapseChanged != null) {
+          widget.onCollapseChanged!(_isCollapsed);
+        }
+      }
+
+      setState(() {});
     }
   }
 
   void _onHorizontalDragEnd(DragEndDetails _) {
     if (_currWidth == tempWidth)
-      setState(() => _isCollapsed = false);
+      setState(() {
+        _isCollapsed = false;
+        widget.onCollapseChanged?.call(false); // Notify parent
+      });
     else if (_currWidth == widget.minWidth)
-      setState(() => _isCollapsed = true);
+      setState(() {
+        _isCollapsed = true;
+        widget.onCollapseChanged?.call(true); // Notify parent
+      });
     else {
       var threshold = _isCollapsed ? _delta1By4 : _delta3by4;
       var endWidth = _currWidth - widget.minWidth > threshold
           ? tempWidth
           : widget.minWidth;
-      _animateTo(endWidth);
+
+      setState(() {
+        _isCollapsed = endWidth == widget.minWidth;
+        widget.onCollapseChanged?.call(_isCollapsed); // Notify parent
+        _animateTo(endWidth);
+      });
     }
+  }
+
+  void _updateWidth() {
+    final endWidth = _isCollapsed ? 80 : 270;
+    _widthAnimation = Tween<double>(begin: _currWidth, end: endWidth.toDouble())
+        .animate(_curvedAnimation);
+    _controller.reset();
+    _controller.forward();
+  }
+
+  void toggleCollapse() {
+    setState(() {
+      _isCollapsed = !_isCollapsed;
+      _updateWidth();
+    });
   }
 
   @override
@@ -254,7 +291,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar>
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
+                  physics: const BouncingScrollPhysics(),
                   reverse: widget.fitItemsToBottom,
                   child: Stack(
                     children: [
@@ -285,7 +322,7 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar>
                               endIndent: 5,
                               thickness: 1,
                             )
-                          : SizedBox(
+                          : const SizedBox(
                               height: 5,
                             ),
                       widget.showToggleButton
@@ -416,7 +453,8 @@ class _CollapsibleSidebarState extends State<CollapsibleSidebar>
                   item.icon,
                   size: widget.iconSize,
                   color: iconColor,
-                ))
+                ),
+              )
             : item.iconImage != null
                 ? CircleAvatar(
                     radius: widget.iconSize / 2,
