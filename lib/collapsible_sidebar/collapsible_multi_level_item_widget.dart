@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 
 class CollapsibleMultiLevelItemWidget extends StatefulWidget {
   const CollapsibleMultiLevelItemWidget({
+    super.key,
     required this.onHoverPointer,
     required this.textStyle,
     required this.padding,
     required this.offsetX,
     required this.scale,
-    required this.mainLevel,
+    // required this.mainLevel,
     required this.subItems,
     required this.extendable,
     required this.disable,
@@ -21,9 +22,15 @@ class CollapsibleMultiLevelItemWidget extends StatefulWidget {
     this.isSelected,
     this.minWidth,
     this.parentComponent,
+    this.expandSubMenuWidget,
+    this.collapseSubMenuWidget,
+    this.borderRadius,
+    this.hoverBackgroundColor,
+    this.leadingIcon,
+    this.textWidget,
   });
 
-  final Widget mainLevel;
+  // final Widget mainLevel;
   final MouseCursor onHoverPointer;
   final TextStyle textStyle;
   final double offsetX, scale, padding;
@@ -37,7 +44,12 @@ class CollapsibleMultiLevelItemWidget extends StatefulWidget {
   final Color? iconColor;
   final VoidCallback? onTapMainLevel, onHold;
   final bool? parentComponent;
-
+  final Widget? expandSubMenuWidget;
+  final Widget? collapseSubMenuWidget;
+  final BorderRadius? borderRadius;
+  final Color? hoverBackgroundColor;
+  final Widget? leadingIcon;
+  final Widget? textWidget;
   @override
   _CollapsibleMultiLevelItemWidgetState createState() =>
       _CollapsibleMultiLevelItemWidgetState();
@@ -83,68 +95,117 @@ class _CollapsibleMultiLevelItemWidgetState
           },
           onLongPress: widget.onHold,
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Expanded(
-                child: widget.mainLevel,
+                child: Row(
+                  children: [
+                    Stack(
+                      children: [
+                        widget.leadingIcon!,
+                        if (!isOpen &&
+                            widget.collapseSubMenuWidget != null &&
+                            widget.isCollapsed == true)
+                          Positioned(
+                            top: 2,
+                            right: 0,
+                            child: SizedBox(
+                              height: 15,
+                              width: 15,
+                              child: widget.collapseSubMenuWidget!,
+                            ),
+                          ),
+                      ],
+                    ),
+                    widget.textWidget!,
+                  ],
+                ),
               ),
+
+              /// Custom widget
               if (widget.disable != null && widget.disable == false)
-                Icon(
-                  isOpen ? Icons.expand_less : Icons.expand_more,
-                  color: widget.iconColor,
-                )
+                _submenuWidget, // Wrap this with Expanded
             ],
           ),
         ),
+        SizedBox(
+          height: widget.padding,
+        ),
         if (widget.disable != null && widget.disable == false)
           AnimatedSize(
-            duration: Duration(milliseconds: 300),
-            child: Container(
+            duration: const Duration(milliseconds: 300),
+            child: SizedBox(
               height: widget.extendable == true && isOpen ? null : 0,
               child: Column(
                 children: widget.subItems
-                    .map((subItem) => CollapsibleItemWidget(
-                          onHoverPointer: widget.onHoverPointer,
-                          padding: widget.padding,
-                          offsetX: widget.offsetX,
-                          scale: widget.scale,
-                          leading: subItem.iconImage != null
-                              ? CircleAvatar(
-                                  radius: widget.iconSize! / 2,
-                                  backgroundImage: subItem.iconImage,
-                                  backgroundColor: Colors.transparent,
-                                )
-                              : (subItem.icon != null
-                                  ? Icon(
-                                      subItem.icon,
-                                      size: widget.iconSize,
-                                      color: widget.iconColor,
-                                    )
-                                  : SizedBox(
-                                      width: widget.iconSize,
-                                      height: widget.iconSize,
-                                    )),
-                          iconSize: widget.iconSize,
-                          iconColor: widget.iconColor,
-                          title: subItem.text,
-                          textStyle: widget.textStyle,
-                          isCollapsed: widget.isCollapsed,
-                          minWidth: widget.minWidth,
-                          onTap: () {
-                            subItem.onPressed();
-                          },
-                          onLongPress: () {
-                            if (subItem.onHold != null) {
-                              subItem.onHold!();
-                            }
-                          },
-                          subItems: subItem.subItems,
-                        ))
+                    .map(
+                      (subItem) => CollapsibleItemWidget(
+                        onHoverPointer: widget.onHoverPointer,
+                        borderRadius: widget.borderRadius,
+                        hoverBackgroundColor: widget.hoverBackgroundColor,
+                        padding: EdgeInsets.all(
+                          widget.padding,
+                        ),
+                        offsetX: widget.offsetX,
+                        scale: widget.scale,
+                        leading: subItem.iconImage != null
+                            ? Image(
+                                image: subItem.iconImage!,
+                                width: widget.iconSize,
+                                height: widget.iconSize,
+                              )
+                            : (subItem.icon != null
+                                ? Icon(
+                                    subItem.icon,
+                                    size: widget.iconSize,
+                                    color: widget.iconColor,
+                                  )
+                                : SizedBox(
+                                    width: widget.iconSize,
+                                    height: widget.iconSize,
+                                  )),
+                        iconSize: widget.iconSize,
+                        iconColor: widget.iconColor,
+                        title: subItem.text,
+                        textStyle: widget.textStyle,
+                        isCollapsed: widget.isCollapsed,
+                        minWidth: widget.minWidth,
+                        onTap: () {
+                          subItem.onPressed();
+                        },
+                        onLongPress: () {
+                          if (subItem.onHold != null) {
+                            subItem.onHold!();
+                          }
+                        },
+                        subItems: subItem.subItems,
+                      ),
+                    )
                     .toList(),
               ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget get _submenuWidget {
+    return Opacity(
+      opacity: widget.scale,
+      child: Transform.translate(
+        offset: Offset(
+          widget.isCollapsed == true ? widget.offsetX : 0,
+          0,
+        ),
+        child: Transform.scale(
+          scale: widget.scale,
+          child: widget.extendable
+              ? (isOpen
+                  ? widget.expandSubMenuWidget ?? const SizedBox.shrink()
+                  : widget.collapseSubMenuWidget ?? const SizedBox.shrink())
+              : const SizedBox.shrink(),
+        ),
+      ),
     );
   }
 }

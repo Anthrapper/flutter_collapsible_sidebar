@@ -47,7 +47,7 @@ class CollapsibleSidebar extends StatefulWidget {
     this.showToggleButton = true,
     this.topPadding = 0,
     this.bottomPadding = 0,
-    this.itemPadding = 10,
+    this.itemPadding = const EdgeInsets.all(10),
     this.customItemOffsetX = -1,
     this.fitItemsToBottom = false,
     this.onTitleTap,
@@ -65,11 +65,16 @@ class CollapsibleSidebar extends StatefulWidget {
     this.customTitleWidget,
     this.customBottomWidget,
     this.onCollapseChanged,
+    this.collapseSubMenuWidget,
+    this.expandSubMenuWidget,
+    this.itemBorderRadius,
+    this.itemHoverColor,
   });
   final Widget? customTitleWidget;
   final Widget? customBottomWidget;
   final ValueChanged<bool>? onCollapseChanged;
-
+  final Widget? expandSubMenuWidget;
+  final Widget? collapseSubMenuWidget;
   final avatarImg;
   final String title, toggleTitle;
   final MouseCursor onHoverPointer;
@@ -90,7 +95,6 @@ class CollapsibleSidebar extends StatefulWidget {
       iconSize,
       customItemOffsetX,
       padding = 10,
-      itemPadding,
       topPadding,
       bottomPadding,
       screenPadding,
@@ -109,7 +113,9 @@ class CollapsibleSidebar extends StatefulWidget {
   final Curve curve;
   final VoidCallback? onTitleTap;
   final List<BoxShadow> sidebarBoxShadow;
-
+  final EdgeInsets itemPadding;
+  final BorderRadius? itemBorderRadius;
+  final Color? itemHoverColor;
   @override
   CollapsibleSidebarState createState() => CollapsibleSidebarState();
 }
@@ -142,7 +148,7 @@ class CollapsibleSidebarState extends State<CollapsibleSidebar>
     _delta1By4 = _delta * 0.25;
     _delta3by4 = _delta * 0.75;
     _maxOffsetX = widget.padding * 2 + widget.iconSize;
-    _maxOffsetY = widget.itemPadding * 2 + widget.iconSize;
+    _maxOffsetY = widget.itemPadding.top * 2 + widget.iconSize;
 
     _selectedItemIndex = 0;
     for (var i = 0; i < widget.items.length; i++) {
@@ -229,17 +235,17 @@ class CollapsibleSidebarState extends State<CollapsibleSidebar>
   }
 
   void _onHorizontalDragEnd(DragEndDetails _) {
-    if (_currWidth == tempWidth)
+    if (_currWidth == tempWidth) {
       setState(() {
         _isCollapsed = false;
         widget.onCollapseChanged?.call(false); // Notify parent
       });
-    else if (_currWidth == widget.minWidth)
+    } else if (_currWidth == widget.minWidth) {
       setState(() {
         _isCollapsed = true;
         widget.onCollapseChanged?.call(true); // Notify parent
       });
-    else {
+    } else {
       var threshold = _isCollapsed ? _delta1By4 : _delta3by4;
       var endWidth = _currWidth - widget.minWidth > threshold
           ? tempWidth
@@ -439,6 +445,10 @@ class CollapsibleSidebarState extends State<CollapsibleSidebar>
         textColor = widget.selectedTextColor;
       }
       return CollapsibleItemWidget(
+        borderRadius: widget.itemBorderRadius,
+        hoverBackgroundColor: widget.itemHoverColor,
+        collapseSubMenuWidget: widget.collapseSubMenuWidget,
+        expandSubMenuWidget: widget.expandSubMenuWidget,
         onHoverPointer: widget.onHoverPointer,
         padding: widget.itemPadding,
         offsetX:
@@ -456,10 +466,12 @@ class CollapsibleSidebarState extends State<CollapsibleSidebar>
                 ),
               )
             : item.iconImage != null
-                ? CircleAvatar(
-                    radius: widget.iconSize / 2,
-                    backgroundImage: item.iconImage,
-                    backgroundColor: Colors.transparent,
+                ? Image(
+                    image: item.iconImage!,
+                    width: widget.iconSize,
+                    height: widget.iconSize,
+                    // radius: widget.iconSize / 2,
+                    // backgroundColor: Colors.transparent,
                   )
                 : (item.icon != null
                     ? Icon(
